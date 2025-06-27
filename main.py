@@ -55,7 +55,7 @@ def on_receive(packet=None, interface=None):
             return  # Ignore own messages
 
         # ✅ Must be a direct RF packet
-        if packet.get("rx_rssi") is None or packet.get("rx_snr") is None:
+        if packet.get("rxRssi") is None or packet.get("rxSnr") is None:
             print(f"[⏩] Skipping non-RF packet from {from_node}")
             return
 
