@@ -1,4 +1,10 @@
-import meshtastic
+import m# Load environment variables from .env file
+load_dotenv()
+
+PORT = os.getenv("PORT", "/dev/ttyUSB0")
+DB_PATH = os.getenv("DB_PATH", "seen_nodes.db")
+WELCOME_MSG = os.getenv("WELCOME_MSG", "Welcome to Abrantes Meshtastic!")
+my_node_num = Noneic
 import meshtastic.serial_interface
 import time
 import sqlite3
@@ -9,8 +15,8 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-PORT = os.getenv("PORT", "/dev/ttyUSB0")
-DB_PATH = os.getenv("DB_PATH", "seen_nodes.db")
+PORT = "/dev/ttyUSB0"
+DB_PATH = "seen_nodes.db"
 WELCOME_MSG = os.getenv("WELCOME_MSG", "Welcome to Meshtastic!")
 my_node_num = None
 
