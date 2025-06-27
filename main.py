@@ -1,0 +1,103 @@
+import meshtastic
+import meshtastic.serial_interface
+import time
+import sqlite3
+from pubsub import pub
+
+PORT = "/dev/ttyUSB0"
+DB_PATH = "seen_nodes.db"
+WELCOME_MSG = "Welcome to Abrantes Meshtastic!"
+my_node_num = None
+
+# -- Initialize SQLite Database --
+def init_db():
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    c = conn.cursor()
+    c.execute("""
+        CREATE TABLE IF NOT EXISTS nodes (
+            node_id INTEGER PRIMARY KEY,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            raw_json TEXT
+        )
+    """)
+    conn.commit()
+    return conn
+
+# -- Check if we've already seen this node --
+def has_seen_node(conn, node_id):
+    c = conn.cursor()
+    c.execute("SELECT 1 FROM nodes WHERE node_id = ?", (node_id,))
+    return c.fetchone() is not None
+
+# -- Store new node --
+def store_node(conn, node_id, packet):
+    c = conn.cursor()
+    c.execute("""
+        INSERT INTO nodes (node_id, raw_json)
+        VALUES (?, ?)
+    """, (node_id, str(packet)))
+    conn.commit()
+
+# -- Handle incoming packets --
+def on_receive(packet=None, interface=None):
+    global my_node_num, conn
+    try:
+        if not packet or not interface:
+            return
+
+        print("[📦] Raw packet:", packet)  # Debug output
+
+        from_node = packet.get("from")
+        if not from_node or from_node == my_node_num:
+            return  # Ignore own messages
+
+        # ✅ Must be a direct RF packet
+        if packet.get("rx_rssi") is None or packet.get("rx_snr") is None:
+            print(f"[⏩] Skipping non-RF packet from {from_node}")
+            return
+
+        # ✅ Check if the node exists in the local node DB
+        node_entry = interface.nodes.get(from_node)
+        if not node_entry:
+            print(f"[⚠] Node {from_node} not in local node DB.")
+            return
+
+        # ✅ Check if node has a public key
+        if not node_entry.user or not node_entry.user.public_key:
+            print(f"[⚠] Node {from_node} has no public key.")
+            return
+
+        if has_seen_node(conn, from_node):
+            print(f"[📶] Already seen node {from_node}")
+            return
+
+        print(f"[🆕] New RF node seen: {from_node}")
+        interface.sendText(WELCOME_MSG, destinationId=from_node)
+        store_node(conn, from_node, packet)
+
+    except Exception as e:
+        print(f"[‼] Error: {e}")
+
+def main():
+    global my_node_num, conn
+
+    print("[🔌] Connecting to Meshtastic device...")
+    iface = meshtastic.serial_interface.SerialInterface(devPath=PORT)
+
+    my_node_num = iface.myInfo.my_node_num
+    print(f"[🆔] This node ID: {my_node_num}")
+
+    conn = init_db()
+    pub.subscribe(on_receive, "meshtastic.receive")
+
+    print("[📡] Waiting for new RF nodes...")
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n[⛔] Exiting...")
+        iface.close()
+        conn.close()
+
+if __name__ == "__main__":
+    main()
