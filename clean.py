@@ -88,16 +88,17 @@ def clean_nodedb():
     removed_count = 0
     for node_id in nodes_to_remove:
         try:
-            # Convert string ID to numeric if needed
-            if node_id.startswith('!'):
-                node_num = int(node_id[1:], 16)
-            else:
-                node_num = nodes[node_id].get('num')
+            # Use the proper removeNode method from the interface
+            print(f"[🗑️] Removing node: {node_id}")
             
+            # The removeNode method accepts either int or str nodeId
+            # We can use the numeric node ID directly
+            node_num = nodes[node_id].get('num')
             if node_num:
-                print(f"[🗑️] Removing node: {node_id}")
-                iface.sendText(f"admin rmnode {node_num}", destinationId=my_node_num)
+                iface.localNode.removeNode(node_num)
                 removed_count += 1
+            else:
+                print(f"[⚠️] Could not find numeric ID for {node_id}")
             
         except Exception as e:
             print(f"[⚠️] Failed to remove {node_id}: {e}")
