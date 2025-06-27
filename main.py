@@ -48,9 +48,7 @@ def on_receive(packet=None, interface=None):
     global my_node_num, conn
     try:
         if not packet or not interface:
-            return
-
-        print("[📦] Raw packet:", packet)  # Debug output
+            return  # Debug output
 
         from_node = packet.get("from")
         if not from_node or from_node == my_node_num:
@@ -77,6 +75,7 @@ def on_receive(packet=None, interface=None):
             return
 
         print(f"[🆕] New RF node seen: {from_node}")
+        print("[📦] Raw packet:", packet)
         interface.sendText(WELCOME_MSG, destinationId=from_node)
         store_node(conn, from_node, packet)
 
