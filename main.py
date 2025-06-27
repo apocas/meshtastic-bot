@@ -60,13 +60,18 @@ def on_receive(packet=None, interface=None):
             return
 
         # ✅ Check if the node exists in the local node DB
-        node_entry = interface.nodes.get(from_node)
+        node_entry = None
+        for node_id, node_data in interface.nodes.items():
+            if node_data.get('num') == from_node:
+                node_entry = node_data
+                break
+        
         if not node_entry:
             print(f"[⚠] Node {from_node} not in local node DB.")
             return
 
         # ✅ Check if node has a public key
-        if not node_entry.user or not node_entry.user.public_key:
+        if not node_entry.get('user') or not node_entry['user'].get('publicKey'):
             print(f"[⚠] Node {from_node} has no public key.")
             return
 
