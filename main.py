@@ -59,22 +59,6 @@ def on_receive(packet=None, interface=None):
             print(f"[⏩] Skipping non-RF packet from {from_node}")
             return
 
-        # ✅ Check if the node exists in the local node DB
-        node_entry = None
-        for node_id, node_data in interface.nodes.items():
-            if node_data.get('num') == from_node:
-                node_entry = node_data
-                break
-        
-        if not node_entry:
-            print(f"[⚠] Node {from_node} not in local node DB.")
-            return
-
-        # ✅ Check if node has a public key
-        if not node_entry.get('user') or not node_entry['user'].get('publicKey'):
-            print(f"[⚠] Node {from_node} has no public key.")
-            return
-
         if has_seen_node(conn, from_node):
             print(f"[📶] Already seen node {from_node}")
             return

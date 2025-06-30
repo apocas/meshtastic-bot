@@ -87,7 +87,7 @@ def clean_nodedb():
         iface.close()
         return
     
-    print(f"\n[🔄] Starting automatic cleanup of {len(nodes_to_remove)} old nodes...")
+    print(f"\n[🔄] Starting automatic cleanup of {len(nodes_to_remove)} nodes (MQTT + old)...")
     
     # Remove nodes automatically (no confirmation)
     removed_count = 0
@@ -117,7 +117,9 @@ def main():
     """Main entry point."""
     print("🧹 Meshtastic Node Database Cleaner")
     print("=====================================")
-    print("This will automatically remove nodes not heard in the last 6 days")
+    print("This will automatically remove:")
+    print("- MQTT nodes (viaMqtt: true)")
+    print("- Nodes not heard in the last 6 days")
     print("(excluding favorites and your own node).\n")
     
     try:
