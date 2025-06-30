@@ -49,6 +49,7 @@ def clean_nodedb():
         is_favorite = node_data.get('isFavorite', False)
         last_heard = node_data.get('lastHeard', 0)
         is_own_node = node_data.get('num') == my_node_num
+        via_mqtt = node_data.get('viaMqtt', False)
         
         # Calculate how long ago the node was last heard
         time_since_heard = current_time - last_heard if last_heard else float('inf')
@@ -61,6 +62,10 @@ def clean_nodedb():
         elif is_favorite:
             favorites_count += 1
             print(f"[⭐] Keeping favorite: {node_id} ({node_name})")
+        elif via_mqtt:
+            old_nodes_count += 1
+            nodes_to_remove.append(node_id)
+            print(f"[🗑️] Will remove (MQTT node): {node_id} ({node_name})")
         elif time_since_heard > SIX_DAYS_SECONDS:
             old_nodes_count += 1
             nodes_to_remove.append(node_id)
@@ -74,7 +79,7 @@ def clean_nodedb():
     print(f"\n[📈] Summary:")
     print(f"  - Favorite nodes kept: {favorites_count}")
     print(f"  - Recent nodes kept: {len(nodes) - favorites_count - old_nodes_count - 1}")  # -1 for own node
-    print(f"  - Old nodes to remove (>6 days): {len(nodes_to_remove)}")
+    print(f"  - Nodes to remove (MQTT + >6 days old): {len(nodes_to_remove)}")
     print(f"  - Own node (always kept): 1")
     
     if not nodes_to_remove:
