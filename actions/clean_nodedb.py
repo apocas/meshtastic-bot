@@ -12,7 +12,7 @@ import os
 
 # Configuration
 INTERVAL_SECONDS = int(os.getenv("CLEAN_INTERVAL_SECONDS", "1800"))  # 30 minutes default
-SIX_DAYS_SECONDS = 6 * 24 * 60 * 60  # 6 days
+SIX_DAYS_SECONDS = 1 * 60 * 60  # 6 days
 
 # Action state
 last_run_time = 0
@@ -22,6 +22,11 @@ def should_run():
     """Check if this action should run based on its interval."""
     global last_run_time
     current_time = time.time()
+    
+    # Don't run on first boot - initialize the timer
+    if last_run_time == 0:
+        last_run_time = current_time
+        return False
     
     if current_time - last_run_time >= INTERVAL_SECONDS:
         return True

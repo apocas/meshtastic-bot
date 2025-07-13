@@ -19,6 +19,11 @@ def should_run():
     global last_run_time
     current_time = time.time()
     
+    # Don't run on first boot - initialize the timer
+    if last_run_time == 0:
+        last_run_time = current_time
+        return False
+    
     if current_time - last_run_time >= INTERVAL_SECONDS:
         return True
     return False
