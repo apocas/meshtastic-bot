@@ -47,12 +47,22 @@ class ActionManager:
             except Exception as e:
                 print(f"[❌] Failed to load action {module_name}: {e}")
     
-    def run_actions(self, interface, my_node_num):
+    def run_actions(self, interface, my_node_num, packet=None, conn=None):
         """Check and run all actions that should execute."""
         for action_name, action_module in self.actions.items():
             try:
                 if action_module.should_run():
-                    action_module.execute(interface, my_node_num)
+                    # Check if action accepts packet and/or conn parameters
+                    import inspect
+                    sig = inspect.signature(action_module.execute)
+                    kwargs = {}
+                    
+                    if 'packet' in sig.parameters:
+                        kwargs['packet'] = packet
+                    if 'conn' in sig.parameters:
+                        kwargs['conn'] = conn
+                    
+                    action_module.execute(interface, my_node_num, **kwargs)
             except Exception as e:
                 print(f"[❌] Error running action {action_name}: {e}")
     

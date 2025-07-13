@@ -12,7 +12,6 @@ load_dotenv()
 
 PORT = os.getenv("PORT", "/dev/ttyUSB0")
 DB_PATH = os.getenv("DB_PATH", "seen_nodes.db")
-WELCOME_MSG = os.getenv("WELCOME_MSG", "Welcome to Meshtastic!")
 
 my_node_num = None
 
@@ -30,51 +29,21 @@ def init_db():
     conn.commit()
     return conn
 
-# -- Check if we've already seen this node --
-def has_seen_node(conn, node_id):
-    c = conn.cursor()
-    c.execute("SELECT 1 FROM nodes WHERE node_id = ?", (node_id,))
-    return c.fetchone() is not None
-
-# -- Store new node --
-def store_node(conn, node_id, packet):
-    c = conn.cursor()
-    c.execute("""
-        INSERT INTO nodes (node_id, raw_json)
-        VALUES (?, ?)
-    """, (node_id, str(packet)))
-    conn.commit()
-
 # -- Handle incoming packets --
 def on_receive(packet=None, interface=None):
-    global my_node_num, conn
+    global my_node_num, conn, action_manager
     try:
         if not packet or not interface:
-            return  # Debug output
-
-        from_node = packet.get("from")
-        if not from_node or from_node == my_node_num:
-            return  # Ignore own messages
-
-        # ✅ Must be a direct RF packet
-        if packet.get("rxRssi") is None or packet.get("rxSnr") is None:
-            print(f"[⏩] Skipping non-RF packet from {from_node}")
             return
 
-        if has_seen_node(conn, from_node):
-            print(f"[📶] Already seen node {from_node}")
-            return
-
-        print(f"[🆕] New RF node seen: {from_node}")
-        print("[📦] Raw packet:", packet)
-        interface.sendText(WELCOME_MSG, destinationId=from_node)
-        store_node(conn, from_node, packet)
+        # Run packet-based actions (like ping-pong and welcome messages)
+        action_manager.run_actions(interface, my_node_num, packet=packet, conn=conn)
 
     except Exception as e:
         print(f"[‼] Error: {e}")
 
 def main():
-    global my_node_num, conn
+    global my_node_num, conn, action_manager
 
     print("[🔌] Connecting to Meshtastic device...")
     iface = meshtastic.serial_interface.SerialInterface(devPath=PORT)
@@ -99,8 +68,8 @@ def main():
     
     try:
         while True:
-            # Run any actions that should execute
-            action_manager.run_actions(iface, my_node_num)
+            # Run time-based actions that should execute
+            action_manager.run_actions(iface, my_node_num, conn=conn)
             
             time.sleep(1)
     except KeyboardInterrupt:
