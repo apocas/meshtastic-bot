@@ -41,9 +41,9 @@ def execute(interface, my_node_num, packet=None):
             if to_node != my_node_num:
                 return  # Not a direct message to us
             
-            time.sleep(20)
-            
             print(f"[🏓] Received ping from {from_node}, responding with pong")
+            
+            time.sleep(5)
             
             # Send pong response
             interface.sendText("pong", destinationId=from_node)
