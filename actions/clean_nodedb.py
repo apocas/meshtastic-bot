@@ -12,7 +12,7 @@ import os
 
 # Configuration
 INTERVAL_SECONDS = int(os.getenv("CLEAN_INTERVAL_SECONDS", "1800"))  # 30 minutes default
-SIX_DAYS_SECONDS = 1 * 60 * 60  # 6 days
+SIX_DAYS_SECONDS = 6 * 24 * 60 * 60  # 6 days
 
 # Action state
 last_run_time = 0
