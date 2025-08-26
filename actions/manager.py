@@ -26,7 +26,7 @@ class ActionManager:
         
         # Find all Python files in the actions directory
         for file_path in actions_dir.glob("*.py"):
-            if file_path.name.startswith("__"):
+            if file_path.name.startswith("__") or file_path.name == "manager.py":
                 continue  # Skip __init__.py and __pycache__
             
             module_name = file_path.stem
