@@ -95,8 +95,17 @@ def main():
                 interval = info.get('interval_minutes', 'N/A')
                 print(f"[] {info.get('name', action_name)}: {info.get('description', 'No description')} (Every {interval} min)")
             
+            # Main loop
+            last_heartbeat_time = time.time()
             while True:
+                # Run time-based actions that should execute
                 action_manager.run_actions(iface, my_node_num, conn=conn)
+
+                # Send a heartbeat every 30 seconds to check connection
+                if time.time() - last_heartbeat_time > 30:
+                    iface.sendPing() # This will raise an exception if the connection is dead
+                    last_heartbeat_time = time.time()
+                
                 time.sleep(1)
 
         except (meshtastic.MeshtasticException, OSError) as e:
