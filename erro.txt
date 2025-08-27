@@ -1,0 +1,17 @@
+Exception in thread Thread-197:
+Traceback (most recent call last):
+  File "/usr/lib/python3.11/threading.py", line 1038, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.11/threading.py", line 1394, in run
+    self.function(*self.args, **self.kwargs)
+  File "/home/telmo/meshBot/.venv/lib/python3.11/site-packages/meshtastic/mesh_interface.py", line 1149, in callback
+    self.sendHeartbeat()
+  File "/home/telmo/meshBot/.venv/lib/python3.11/site-packages/meshtastic/mesh_interface.py", line 1138, in sendHeartbeat
+    self._sendToRadio(p)
+  File "/home/telmo/meshBot/.venv/lib/python3.11/site-packages/meshtastic/mesh_interface.py", line 1213, in _sendToRadio
+    self._sendToRadioImpl(toRadio)
+  File "/home/telmo/meshBot/.venv/lib/python3.11/site-packages/meshtastic/stream_interface.py", line 120, in _sendToRadioImpl
+    self._writeBytes(header + b)
+  File "/home/telmo/meshBot/.venv/lib/python3.11/site-packages/meshtastic/tcp_interface.py", line 91, in _writeBytes
+    self.socket.send(b)
+BrokenPipeError: [Errno 32] Broken pipe
