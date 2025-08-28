@@ -10,7 +10,10 @@ Each action should have:
 
 import os
 import importlib.util
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class ActionManager:
@@ -22,6 +25,7 @@ class ActionManager:
         """Dynamically load all actions from the actions directory."""
         actions_dir = Path(__file__).parent
         
+        logger.info(f"Loading actions from {actions_dir}")
         print(f"[⚙️] Loading actions from {actions_dir}")
         
         # Find all Python files in the actions directory
@@ -40,18 +44,42 @@ class ActionManager:
                 if hasattr(module, 'should_run') and hasattr(module, 'execute'):
                     self.actions[module_name] = module
                     info = module.get_info() if hasattr(module, 'get_info') else {"name": module_name}
+                    logger.info(f"Loaded action: {info.get('name', module_name)}")
                     print(f"[✅] Loaded action: {info.get('name', module_name)}")
                 else:
+                    logger.warning(f"Skipped {module_name}: missing required functions (should_run, execute)")
                     print(f"[⚠️] Skipped {module_name}: missing required functions (should_run, execute)")
                     
             except Exception as e:
+                logger.error(f"Failed to load action {module_name}: {e}")
                 print(f"[❌] Failed to load action {module_name}: {e}")
     
     def run_actions(self, interface, my_node_num, packet=None, conn=None):
         """Check and run all actions that should execute."""
         for action_name, action_module in self.actions.items():
             try:
-                if action_module.should_run():
+                should_execute = False
+                
+                if packet is not None:
+                    # Packet-based execution: check if action handles packets
+                    if hasattr(action_module, 'should_run_on_packet'):
+                        should_execute = action_module.should_run_on_packet()
+                    # Legacy support for actions that don't have should_run_on_packet
+                    # but only if should_run() returns True AND the action accepts packets
+                    elif not hasattr(action_module, 'should_run_on_packet'):
+                        if hasattr(action_module, 'should_run') and action_module.should_run():
+                            # Only run if the action explicitly checks for packets
+                            import inspect
+                            sig = inspect.signature(action_module.execute)
+                            if 'packet' in sig.parameters:
+                                should_execute = True
+                else:
+                    # Time-based execution: use should_run() function
+                    if hasattr(action_module, 'should_run'):
+                        should_execute = action_module.should_run()
+                
+                if should_execute:
+                    logger.debug(f"Running action: {action_name}")
                     # Check if action accepts packet and/or conn parameters
                     import inspect
                     sig = inspect.signature(action_module.execute)
@@ -62,8 +90,18 @@ class ActionManager:
                     if 'conn' in sig.parameters:
                         kwargs['conn'] = conn
                     
-                    action_module.execute(interface, my_node_num, **kwargs)
+                    # Execute the action
+                    result = action_module.execute(interface, my_node_num, **kwargs)
+                    
+                    # Only log success for meaningful executions
+                    if packet is not None:
+                        # For packet-based actions, only log if we're processing a valid packet
+                        logger.debug(f"Completed packet-based action: {action_name}")
+                    else:
+                        # For time-based actions, always log successful execution
+                        logger.info(f"Successfully executed time-based action: {action_name}")
             except Exception as e:
+                logger.error(f"Error running action {action_name}: {e}")
                 print(f"[❌] Error running action {action_name}: {e}")
     
     def get_actions_info(self):
@@ -78,5 +116,6 @@ class ActionManager:
     
     def reload_actions(self):
         """Reload all actions (useful for development)."""
+        logger.info("Reloading all actions...")
         self.actions.clear()
         self.load_actions()

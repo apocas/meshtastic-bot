@@ -26,6 +26,9 @@ The core components are:
 - **Dynamic Action Loading:** Simply drop a Python script into the `actions/` directory, and the bot will load it automatically.
 - **SQLite Database:** A simple database is used to persist data, such as keeping track of nodes seen on the network.
 - **Environment-based Configuration:** The bot uses a `.env` file to manage configuration, making it easy to set up without modifying the code.
+- **Automatic Reconnection:** The bot automatically detects connection failures and reconnects to maintain continuous operation.
+- **Comprehensive Logging:** Built-in logging system tracks all bot activities, errors, and action executions for debugging and monitoring.
+- **Multiple Connection Types:** Supports both serial (USB) and IP/TCP connections to Meshtastic devices.
 
 ## Getting Started
 
@@ -57,13 +60,66 @@ The core components are:
      cp .env.example .env
      ```
 
-   - Edit the `.env` file to set the correct serial `PORT` for your Meshtastic device.
+   - Edit the `.env` file to configure your connection settings and logging preferences:
+     - `CONNECTION_TYPE`: Set to "serial" or "ip"
+     - `PORT`: Serial port for USB connections (e.g., `/dev/ttyUSB0`)
+     - `DEVICE_IP`: IP address for TCP connections
+     - `LOG_LEVEL`: Set logging verbosity (DEBUG, INFO, WARNING, ERROR)
+     - `LOG_FILE`: Path to log file (default: `meshbot.log`)
 
 4. **Run the bot:**
 
    ```bash
    python main.py
    ```
+
+## Logging and Monitoring
+
+The bot includes comprehensive logging to help you monitor its operation and debug issues:
+
+### Log Levels
+
+- **DEBUG:** Very detailed information (heartbeats, packet details, action attempts)
+- **INFO:** General operations (connections, successful action executions)
+- **WARNING:** Issues that don't stop the bot (connection problems, skipped actions)
+- **ERROR:** Serious errors (action failures, unexpected exceptions)
+
+### Viewing Logs
+
+```bash
+# View live logs as they happen
+tail -f meshbot.log
+
+# Search for errors
+grep ERROR meshbot.log
+
+# Search for specific actions
+grep "welcome_message" meshbot.log
+
+# View recent connection events
+grep -E "Connect|Disconnect|Reconnect" meshbot.log
+```
+
+### Configuration
+
+Set logging preferences in your `.env` file:
+
+```properties
+# Log level: DEBUG, INFO, WARNING, ERROR
+LOG_LEVEL=INFO
+
+# Log file location
+LOG_FILE=meshbot.log
+```
+
+## Automatic Reconnection
+
+The bot automatically handles connection issues:
+
+- **Connection Monitoring:** Sends heartbeat signals every 30 seconds to detect dead connections
+- **Automatic Retry:** If the connection is lost, the bot waits 30 seconds and attempts to reconnect
+- **Graceful Error Handling:** Properly closes broken connections to prevent resource leaks
+- **Continuous Operation:** The bot continues running even through multiple connection failures
 
 ## Creating Your Own Actions
 
