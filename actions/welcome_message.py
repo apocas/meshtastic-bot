@@ -11,7 +11,12 @@ import os
 
 
 def should_run():
-    """This action should always be ready to run (no time-based interval)."""
+    """This action should only run when a packet is received (packet-based action)."""
+    return False  # Never run in time-based mode
+
+
+def should_run_on_packet():
+    """This action should run when a packet is received."""
     return True
 
 
@@ -20,16 +25,23 @@ def execute(interface, my_node_num, packet=None, conn=None):
     
     # Skip if no packet or database connection provided
     if not packet or not conn:
+        print(f"[DEBUG] Welcome action: No packet ({packet is not None}) or no conn ({conn is not None})")
         return
     
     try:
         from_node = packet.get("from")
+        print(f"[DEBUG] Welcome action: Processing packet from node {from_node}")
+        
         if not from_node or from_node == my_node_num:
+            print(f"[DEBUG] Welcome action: Ignoring packet from own node or invalid node")
             return  # Ignore own messages
 
         # ✅ Must be a direct RF packet
         if packet.get("rxRssi") is None or packet.get("rxSnr") is None:
+            print(f"[DEBUG] Welcome action: Ignoring MQTT/non-RF packet from node {from_node}")
             return  # Skip non-RF packets
+
+        print(f"[DEBUG] Welcome action: Valid RF packet from node {from_node} (RSSI: {packet.get('rxRssi')}, SNR: {packet.get('rxSnr')})")
 
         # Check if we've already seen this node
         if has_seen_node(conn, from_node):
